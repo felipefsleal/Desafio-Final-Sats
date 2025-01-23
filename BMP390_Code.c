@@ -2,12 +2,9 @@
 #include <stdio.h>
 #include <Wire.h> //biblioteca para comunicacao I2C
 #include <Adafruit_BMP3XX.h>  //biblioteca do barometro escolhido (BMP390)
+#include <SPI.h>
+#include "sensors_definition.h"
 
-#define BMP_ADRESS 0x76 //endereco de memoria do barometro
-#define FLASH_PAGE_SIZE 256  // tamanho de uma página de memória na SPI Flash
-#define SD_CS_PIN 5    // pino cs da memoria
-#define I2C_SDA_PIN 15 // Pino SDA do I2C
-#define I2C_SCL_PIN 27 // Pino SCL do I2C
 
 typedef struct {
     
@@ -62,31 +59,35 @@ store_data_in_flash(float pressure, float temperature) {
     data.pressure = pressure;
     data.temperature = temperature;
 
-    // copia os dados para o buffer
-
+    // copia dados buffer
     memcpy(&flash_buffer[flash_buffer_index], &data, sizeof(Measurement));
-
     flash_buffer_index += sizeof(Measurement);
 
-    // se o buffer estiver cheio, escreve no cartao SD
+    // se o buffer estiver cheio, escreve na memoria flash via SPI
     if (flash_buffer_index >= FLASH_PAGE_SIZE) {
+        digitalWrite(SD_CS_PIN, LOW); // seleciona chip memoria flash
 
-        File dataFile = SD.open("data.log", FILE_WRITE);
-        
-        if (dataFile) {
-            
-            dataFile.write(flash_buffer, FLASH_PAGE_SIZE);
-            
-            dataFile.close();
+        // escrever endereco na memória flash
+        SPI.transfer(0x02); // Comando de gravação (WRITE)
+        SPI.transfer((flash_write_address >> 16) & 0xFF); // Endereço MSB
+        SPI.transfer((flash_write_address >> 8) & 0xFF); // Endereço meio
+        SPI.transfer(flash_write_address & 0xFF); // Endereço LSB
+
+        // transfere dados buffer para memoria flash
+        for (uint16_t i = 0; i < FLASH_PAGE_SIZE; i++) {
+            SPI.transfer(flash_buffer[i]);
         }
 
+        digitalWrite(SD_CS_PIN, HIGH);
+
+        // atualiza endereco de gravacao, reinicia indice buffer
         flash_write_address += FLASH_PAGE_SIZE;
-        
-        flash_buffer_index = 0; // reiniciar indice do buffer
+        flash_buffer_index = 0;
     }
 }
 
-void setup() {
+void
+setup() {
     
     Serial.begin(115200); // inicializa a comunicação serial 
     
