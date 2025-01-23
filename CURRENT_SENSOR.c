@@ -1,67 +1,90 @@
+#include <stdint.h>
+#include <stdio.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <SPI.h> //biblioteca para comunicacao SPI
+#include "sensors_definition.h"
 
 
-// Funções fictícias para simular a leitura de sensores
-float getShuntVoltage_mV() {
-    // Simular leitura
-    return 75.0;
+typedef struct {
+
+  float current; //corrente em mA
+  float voltage; //voltagem em V
+
+} measures; 
+
+// Inicializa o objeto Adafruit_INA219
+Adafruit_INA219 ina219;
+
+
+
+
+
+
+
+// Iniciando a comunicação serial  
+void setup() {
+
+ Serial.begin(115200);
+  while (!Serial) {
+      // will pause until serial console opens
+      delay(1);
+  };
+};
+
+
+
+
+
+
+
+// Inicializar componentes
+void start() {
+
+  // Start INA219: se a operação de inicializar o ina219 não funcionar entrará em um loop e dará um erro 
+  if (!ina219.begin_I2C()) {
+
+     printf("Failed to find INA219 chip");
+      while (1) { delay(10);};
+  };
+
+  printf("INA219 chip found");
+
+// inicializa a comunicacao SPI
+    SPI.begin();
+    pinMode(FLASH_CS_PIN, OUTPUT);
+    digitalWrite(FLASH_CS_PIN, HIGH); // desativa o chip de memoria SPI Flash
+
+
+  printf("Measuring voltage and current with INA219 ...");
+};
+
+
+
+
+
+
+//Função para coletar dados medidos pelo sensor
+void loop() {
+  float shuntvoltage = 0;
+  float busvoltage = 0;
+  float current_mA = 0;
+  float power_mW = 0; 
+  float loadvoltage = 0;
+  
+  shuntvoltage = ina219.getShuntVoltage_mV();
+  busvoltage = ina219.getBusVoltage_V();
+  current_mA = ina219.getCurrent_mA();
+  power_mW = ina219.getPower_mW();
+  loadvoltage = busvoltage + (shuntvoltage / 1000);
+
+
+  Serial.print("Bus Voltage:   "); Serial.print(busvoltage); Serial.println(" V");
+  Serial.print("Shunt Voltage: "); Serial.print(shuntvoltage); Serial.println(" mV");
+  Serial.print("Load Voltage:  "); Serial.print(loadvoltage); Serial.println(" V");
+  Serial.print("Current:       "); Serial.print(current_mA); Serial.println(" mA");
+  Serial.print("Power:         "); Serial.print(power_mW); Serial.println(" mW");
+  Serial.println("");
+
+  delay(1000); //Intervalo de 1 segundo para fazer a próxima leitura
 }
 
-float getBusVoltage_V() {
-    // Simular leitura
-    return 12.0;
-}
-
-float getCurrent_mA() {
-    // Simular leitura
-    return 150.0;
-}
-
-float getPower_mW() {
-    // Simular leitura
-    return 1800.0;
-}
-
-int main() {
-    printf("Hello!\n");
-
-    // Inicializar o INA219 (simulado)
-    int ina219_initialized = 1; // Simular que foi inicializado com sucesso
-
-    if (!ina219_initialized) {
-        printf("Failed to find INA219 chip\n");
-        return 1;
-    }
-
-    printf("Measuring voltage and current with INA219 ...\n");
-
-    while (1) {
-        float shuntvoltage = 0;
-        float busvoltage = 0;
-        float current_mA = 0;
-        float loadvoltage = 0;
-        float power_mW = 0;
-
-        shuntvoltage = getShuntVoltage_mV();
-        busvoltage = getBusVoltage_V();
-        current_mA = getCurrent_mA();
-        power_mW = getPower_mW();
-        loadvoltage = busvoltage + (shuntvoltage / 1000);
-
-        printf("Bus Voltage:   %.2f V\n", busvoltage);
-        printf("Shunt Voltage: %.2f mV\n", shuntvoltage);
-        printf("Load Voltage:  %.2f V\n", loadvoltage);
-        printf("Current:       %.2f mA\n", current_mA);
-        printf("Power:         %.2f mW\n", power_mW);
-        printf("\n");
-
-        // Simular delay
-        usleep(2000000); // 2 segundos
-    }
-
-    return 0;
-}
