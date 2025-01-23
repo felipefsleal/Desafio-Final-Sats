@@ -22,33 +22,22 @@ uint8_t flash_buffer[FLASH_PAGE_SIZE];
 uint16_t flash_buffer_index = 0;
 uint32_t  flash_write_address = 0x000000; // endereco inicial na memória Flash
 
-// funcao inicializar os componentes
+// funcao para inicializar os componentes
 
 void
 system_init() {
 
-    // inicializa o cartao SD
+    // Inicializa o BMP390
+    if (!bmp.begin_I2C()) {
 
-    if (!SD.begin(SD_CS_PIN)) {
-
-        //erro ao inicializar, loop infinito evitando a continuacao do programa
-
-        while (1);
-    }
-    
-    // inicializa o BMP390
-    
-    if (!bmp.begin_SPI(BMP_CS_PIN)) {
-      
-         //erro ao inicializar, loop infinito evitando a continuacao do programa
-
+        // erro ao inicializar o BMP390, entra em loop infinito
         while (1);
     }
 
-    bmp.setTemperatureOversampling(BMP3_OVERSAMPLING_8X);
-    bmp.setPressureOversampling(BMP3_OVERSAMPLING_8X);
-    bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_3);
-    bmp.setOutputDataRate(BMP3_ODR_1_HZ);
+    // inicializa a comunicacao SPI
+    SPI.begin();
+    pinMode(FLASH_CS_PIN, OUTPUT);
+    digitalWrite(FLASH_CS_PIN, HIGH); // desativa o chip de memoria SPI Flash
 }
 
 // funcao para armazenar dados na SPI Flash
@@ -59,69 +48,52 @@ store_data_in_flash(float pressure, float temperature) {
     data.pressure = pressure;
     data.temperature = temperature;
 
-    // copia dados buffer
+    // copia dados para o buffer
     memcpy(&flash_buffer[flash_buffer_index], &data, sizeof(Measurement));
     flash_buffer_index += sizeof(Measurement);
 
-    // se o buffer estiver cheio, escreve na memoria flash via SPI
+    // se o buffer estiver cheio, escreve na memoria Flash via SPI
     if (flash_buffer_index >= FLASH_PAGE_SIZE) {
-        digitalWrite(SD_CS_PIN, LOW); // seleciona chip memoria flash
+        digitalWrite(FLASH_CS_PIN, LOW); // Seleciona o chip da memória Flash
 
-        // escrever endereco na memória flash
-        SPI.transfer(0x02); // Comando de gravação (WRITE)
+        // escreve endereço na memoria Flash
+        SPI.transfer(0x02); // comando de gravação (WRITE)
         SPI.transfer((flash_write_address >> 16) & 0xFF); // Endereço MSB
-        SPI.transfer((flash_write_address >> 8) & 0xFF); // Endereço meio
-        SPI.transfer(flash_write_address & 0xFF); // Endereço LSB
+        SPI.transfer((flash_write_address >> 8) & 0xFF);  // Endereço médio
+        SPI.transfer(flash_write_address & 0xFF);         // Endereço LSB
 
-        // transfere dados buffer para memoria flash
+        // transfere dados buffer para memoria Flash
         for (uint16_t i = 0; i < FLASH_PAGE_SIZE; i++) {
             SPI.transfer(flash_buffer[i]);
         }
 
-        digitalWrite(SD_CS_PIN, HIGH);
+        digitalWrite(FLASH_CS_PIN, HIGH); 
 
-        // atualiza endereco de gravacao, reinicia indice buffer
+        // atualiza o endereco de gravacao, reinicia o indice do buffer
         flash_write_address += FLASH_PAGE_SIZE;
         flash_buffer_index = 0;
     }
 }
-
 void
 setup() {
     
-    Serial.begin(115200); // inicializa a comunicação serial 
-    
+    Serial.begin(115200);            // inicializa a comunicacao serial
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); // inicializa os pinos I2C
-    
-    system_init();
+    system_init();                   // inicializa os sensores e a memoria Flash
 }
+void
+loop() {
+    float pressure = 0.0, temperature = 0.0;
 
+    // dados do BMP390
+    if (bmp.performReading()) {
+        pressure = bmp.pressure / 100.0; // Converte para hPa
+        temperature = bmp.temperature;  // Temperatura em °C
 
-int
-main() {
-
-    system_init();
-
-    while (1) {
-        float pressure = 0.0, temperature = 0.0;
-
-        // dados do BMP390
-        if (bmp.performReading()) {
-            
-            pressure = bmp.pressure / 100.0; // converte para hPa
-            
-            temperature = bmp.temperature; // temperatura em C
-
-            // armeznar dados na memória SPI Flash
-            
-            store_data_in_flash(pressure, temperature);
-
-        }
-
-        // Aguarda 1 segundo antes da próxima leitura
-        
-        delay(1000);
+        // armazena dados memoria SPI Flash
+        store_data_in_flash(pressure, temperature);
     }
 
-    return 0;
+    // aguarda 1 segundo antes da proxima leitura
+    delay(1000);
 }
