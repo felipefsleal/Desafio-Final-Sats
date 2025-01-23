@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <Wire.h> //biblioteca para comunicacao I2C
 #include <Adafruit_BMP3XX.h>  //biblioteca do barometro escolhido (BMP390)
-#include <SPI.h>
 #include "sensors_definition.h"
 
 
