@@ -81,7 +81,7 @@ store_data_in_flash(GPSData *data) {
     if (flash_buffer_index >= FLASH_PAGE_SIZE) {
         
         // selecionar o chip de memoria flash
-        digitalWrite(SD_CS_PIN, LOW);
+        digitalWrite(FLASH_CS_PIN, LOW);
 
         // envia o comando de escrita e endereço para a memoria flash
         SPI.transfer(0x02); // comando de gravação 
@@ -94,7 +94,7 @@ store_data_in_flash(GPSData *data) {
             SPI.transfer(flash_buffer[i]);
         }
 
-        digitalWrite(SD_CS_PIN, HIGH);
+        digitalWrite(FLASH_CS_PIN, HIGH);
 
         flash_buffer_index = 0; // reinicia o buffer
 
@@ -109,8 +109,8 @@ setup() {
     
     // inicializa a comunicacao SPI
     SPI.begin();
-    pinMode(SD_CS_PIN, OUTPUT);
-    digitalWrite(SD_CS_PIN, HIGH);
+    pinMode(FLASH_CS_PIN, OUTPUT);
+    digitalWrite(FLASH_CS_PIN, HIGH);
 
     // inicializa o GPS
     initGPS();
@@ -123,7 +123,7 @@ loop() {
     GPSData data = getGPSData();
 
     // armazena os dados na memoria flash
-    storeDataInFlash(&data);
+    store_data_in_flash(&data);
 
     // aguarda 1 segundo para reiniciar os dados
     delay(1000);
