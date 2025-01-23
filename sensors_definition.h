@@ -10,7 +10,7 @@
 
 //definicoes dos pinos
 
-#define SD_CS_PIN           5 // pino cs da memoria
+#define FLASH_CS_PIN        5 // pino cs da memoria
 #define RADIO_CS_PIN        14 // pino cs do radio
 #define IMU_CS_PIN          12 // pino cs do imu
 
