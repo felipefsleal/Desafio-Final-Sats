@@ -5,9 +5,6 @@
 #include "sensors_definition.h"
 
 #define GPSSerial Serial1 // porta serial GPS
-#define FLASH_PAGE_SIZE 256 // tamanho página memória SPI Flash
-#define SD_CS_PIN 5 // pino CS memória flash
-
 
 // dados do GPS
 
