@@ -20,7 +20,6 @@ Adafruit_INA219 ina219;
 
 
 
-
 // Iniciando a comunicação serial  
 void setup() {
 
@@ -30,7 +29,6 @@ void setup() {
       delay(1);
   };
 };
-
 
 
 
@@ -62,7 +60,6 @@ void start() {
 
 
 
-
 //Função para coletar dados medidos pelo sensor
 void loop() {
   float shuntvoltage = 0;
@@ -76,7 +73,6 @@ void loop() {
   current_mA = ina219.getCurrent_mA();
   power_mW = ina219.getPower_mW();
   loadvoltage = busvoltage + (shuntvoltage / 1000);
-
 
   Serial.print("Bus Voltage:   "); Serial.print(busvoltage); Serial.println(" V");
   Serial.print("Shunt Voltage: "); Serial.print(shuntvoltage); Serial.println(" mV");
