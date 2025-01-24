@@ -19,7 +19,7 @@ Adafruit_BMP3XX bmp;
 
 uint8_t flash_buffer[FLASH_PAGE_SIZE];
 uint16_t flash_buffer_index = 0;
-uint32_t  flash_write_address = 0x000000; // endereco inicial na memória Flash
+uint32_t  flash_write_address = BMP_INITIAL_ADRESS; // endereco inicial na memória Flash
 
 // funcao para inicializar os componentes
 

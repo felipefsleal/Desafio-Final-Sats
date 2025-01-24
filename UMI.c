@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <SPI.h> //biblioteca para comunicacao SPI
-#include <Adafruit_BNO055.h> //biblioteca do UMI escolhido
+#include <Adafruit_BNO08x.h> //biblioteca do UMI escolhido
 #include "sensors_definition.h"
 
 typedef struct {

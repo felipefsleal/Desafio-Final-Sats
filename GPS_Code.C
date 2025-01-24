@@ -25,7 +25,7 @@ Adafruit_GPS GPS(&GPSSerial);
 
 uint8_t flash_buffer[FLASH_PAGE_SIZE];
 uint16_t flash_buffer_index = 0;
-uint32_t flash_write_address = 0x1000; // endereco inicial memoria flash (alterar depois)
+uint32_t flash_write_address = GPS_INITIAL_ADRESS; // endereco inicial memoria flash (alterar depois)
 
 // funcao inicializar o GPS
 void
