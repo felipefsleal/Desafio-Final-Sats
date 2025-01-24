@@ -21,7 +21,7 @@ uint32_t flash_write_address = 0x000000; // endereco inicial na memória Flash
 void system_init() {
     // Inicializa o BNO055
     if (!bno.begin()) {
-        // erro ao inicializar o BNO055, entra em loop infinito
+        // erro ao inicializar o BNO055, entgra em loop infinito
         while (1);
     }
 
