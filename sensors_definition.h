@@ -9,7 +9,7 @@
 #define BMP_INITIAL_ADDRESS  0x2A00 //endereco inicial na memoria flash para salvar dados barometro
 #define UMI_INITIAL_ADDRESS  0x3200 //endereco inicial na memoria flash para salvar dados UMI
 #define MCP_INITIAL_ADDRESS  0x4800 //endereco inicial na memoria flash para salvar dados do MCP
-#define RTC_INITIAL_ADDRESS  
+#define RTC_INITIAL_ADDRESS  0x4C00 //endereco inicial na memoria flash para salvar dados do MCP
 //definicoes dos pinos
 
 #define FLASH_CS_PIN        5 // pino cs da memoria

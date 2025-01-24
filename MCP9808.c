@@ -1,9 +1,8 @@
-#include <stdint.h>
-#include <stdio.h>
 #include <Wire.h> // Biblioteca para comunicação I2C
 #include <Adafruit_MCP9808.h> // Biblioteca para o sensor de temperatura MCP9808
 #include "sensors_definition.h" // Definições dos pinos e memória Flash
 
+#define TEMPERATURE_LIMIT 60.0 // Limite em °C
 typedef struct {
     float temperature; // Temperatura em °C
 } Measurement;
@@ -19,7 +18,7 @@ uint32_t flash_write_address = MCP_INITIAL_ADDRESS; // Endereço inicial na mem�
 // Função para inicializar os componentes
 void system_init() {
     // Inicializa o MCP9808
-    if (!tempSensor.begin(0x18)) { // Endereço padrão I2C do MCP9808
+    if (!tempSensor.begin(MCP_I2C_ADDRESS)) { // Endereço padrão I2C do MCP9808
         // Erro ao inicializar o sensor, entra em loop infinito
         while (1);
     }
@@ -73,6 +72,13 @@ void loop() {
 
     // Lê os dados do MCP9808
     temperature = tempSensor.readTempC();
+    
+    if (temperature >= TEMPERATURE_LIMIT) {
+        // Para todo o sistema ao exceder o limite de temperatura
+        while (1) {
+            // Sistema parado. Nada mais será executado.
+        }
+    }
 
     // Armazena os dados na memória SPI Flash
     store_data_in_flash(temperature);
