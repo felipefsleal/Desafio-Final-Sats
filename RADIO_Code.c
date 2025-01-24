@@ -3,85 +3,84 @@
 #include <RH_RF95.h>
 #include "sensors_definition.h"
 
+#define RADIO_FREQ 915.0 // frequencia do radio MHz
+#define RFM95_INT_PIN 13 // pino init radio (interromper)
 
-#define RADIO_FREQ 915.0   // Frequência do rádio em MHz
-
-// buffer para leitura da memoria Flash
+// buffer para leitura da memoria flash
 uint8_t flash_buffer[FLASH_PAGE_SIZE];
-uint32_t flash_read_address = 0x1000; // endereco inicial da memoria Flash
+uint32_t flash_read_address = 0x000000; // endereco inicial da memoria Flash
 
-// objeto radio
+// objeto do rádio
 RH_RF95 rf95(RADIO_CS_PIN, RFM95_INT_PIN);
 
 // funcao para inicializar o radio
-
-void
-initRadio() {
-    // configura o radio
+void initRadio() {
     if (!rf95.init()) {
-        while (1); // trava o programa se o radio nao inicializar
+        while (1);
     }
-    rf95.setFrequency(RADIO_FREQ);  // configura a frequencia
-    rf95.setTxPower(23, false);     // configura a potencia de transmissao
+    rf95.setFrequency(RADIO_FREQ);
+    rf95.setTxPower(23, false);
 }
 
 // funcao para ler dados da memoria Flash
-bool
-read_data_from_flash() {
-    memset(flash_buffer, 0, FLASH_PAGE_SIZE); // reseta o buffer
+bool read_data_from_flash(uint32_t address, uint16_t length) {
+    if (address + length > 0xFFFFF) {
+        return false; // endereco fora dos limites da memoria
+    }
+
+    memset(flash_buffer, 0, FLASH_PAGE_SIZE);
 
     digitalWrite(FLASH_CS_PIN, LOW);
 
-    // envia o comando de leitura e o endereco para a memoria Flash
-    SPI.transfer(0x03); // comando de leitura
-    SPI.transfer((flash_read_address >> 16) & 0xFF); // endereco MSB
-    SPI.transfer((flash_read_address >> 8) & 0xFF);  // endereco medio
-    SPI.transfer(flash_read_address & 0xFF);         // endereco LSB
+    SPI.transfer(0x03); // comando leitura
+    SPI.transfer((address >> 16) & 0xFF); // endereco MSB
+    SPI.transfer((address >> 8) & 0xFF);
+    SPI.transfer(address & 0xFF);         // endereco LSB
 
-    // le dados da memoria para o buffer
-    for (uint16_t i = 0; i < FLASH_PAGE_SIZE; i++) {
+    for (uint16_t i = 0; i < length; i++) {
         flash_buffer[i] = SPI.transfer(0x00);
     }
 
     digitalWrite(FLASH_CS_PIN, HIGH);
-
-    // atualiza o endereco de leitura
-    flash_read_address += FLASH_PAGE_SIZE;
-
-    // retorna falso se o endereco de leitura ultrapassar o limite
-    return flash_read_address < 0xFFFFF; // ajuste conforme o tamanho da sua memoria
+    return true;
 }
 
-// funcao para transmitir os dados via radio
-
-void
-transmit_data() {
-
-    rf95.waitPacketSent(); // aguarda ate a transmissao ser concluida
-    delay(1000);           // aguarda 1 segundo entre transmissoes
+// funcao para transmitir os dados via rádio
+void transmit_data(uint8_t* data, uint16_t length) {
+    rf95.send(data, length);
+    rf95.waitPacketSent();
+    delay(1000); // 1 seg delay
 }
 
-
-void
-setup() {
-    // inicializa SPI, memoria Flash e radio
+void setup() {
     SPI.begin();
     pinMode(FLASH_CS_PIN, OUTPUT);
-    pinMode(RADIO_RST_PIN, OUTPUT);
     digitalWrite(FLASH_CS_PIN, HIGH);
-
-    // configura o radio
     initRadio();
 }
 
-void
-loop() {
-    // le os dados da memoria Flash
-    if (read_data_from_flash()) {
-        // Transmite os dados lidos
-        transmit_data();
-    } else {
-        // reinicia o endereco de leitura caso alcance fim memoria
-        flash_read_address = 0x1000;
+void loop() {
+    // transmitir dados GPS, total 50 bytes
+    if (read_data_from_flash(0x000000, 50)) {
+        transmit_data(flash_buffer, 50);
     }
+
+    // transmitir dados barometro, total 8 bytes
+    if (read_data_from_flash(0x2A00, 8)) {
+        transmit_data(flash_buffer, 8);
+    }
+
+    // transmissao de outros dados (ainda nao definidos)
+    flash_read_address = 0x3200;
+    while (flash_read_address < 0xFFFFF) {
+        if (read_data_from_flash(flash_read_address, FLASH_PAGE_SIZE)) {
+            transmit_data(flash_buffer, FLASH_PAGE_SIZE);
+        } else {
+            break; // sai do loop, endereco estiver fora dos limites
+        }
+        flash_read_address += FLASH_PAGE_SIZE;
+    }
+
+    // reinicia o endereco
+    flash_read_address = 0x000000;
 }
