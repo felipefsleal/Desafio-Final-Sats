@@ -15,7 +15,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &SPI, 10); // 10 é o CS pin
 // buffer armazenamento SPIFLASH
 uint8_t flash_buffer[FLASH_PAGE_SIZE];
 uint16_t flash_buffer_index = 0;
-uint32_t flash_write_address = 0x000000; // endereco inicial na memória Flash
+uint32_t flash_write_address = UMI_INITIAL_ADDRESS; // endereco inicial na memória Flash
 
 // funcao para inicializar os componentes
 void system_init() {
