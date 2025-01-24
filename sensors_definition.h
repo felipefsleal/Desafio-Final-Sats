@@ -5,9 +5,11 @@
 
 #define FLASH_TOTAL_SIZE    0x80000000  // 2 GB
 #define FLASH_PAGE_SIZE     256  // tamanho de uma página de memória na SPI Flash
-#define GPS_INITIAL_ADRESS  0x000000 //endereco inicial na memoria flash para salvar dados gps
-#define BMP_INITIAL_ADRESS  0x2A00 //endereco inicial na memoria flash para salvar dados barometro
-#define UMI_INITIAL_ADRESS  0x3200 //endereco inicial na memoria flash para salvar dados UMI
+#define GPS_INITIAL_ADDRESS  0x000000 //endereco inicial na memoria flash para salvar dados gps
+#define BMP_INITIAL_ADDRESS  0x2A00 //endereco inicial na memoria flash para salvar dados barometro
+#define UMI_INITIAL_ADDRESS  0x3200 //endereco inicial na memoria flash para salvar dados UMI
+#define MCP_INITIAL_ADDRESS  0x4800 //endereco inicial na memoria flash para salvar dados do MCP
+#define RTC_INITIAL_ADDRESS  0x4C00 //endereco inicial na memoria flash para salvar dados do MCP
 //definicoes dos pinos
 
 #define FLASH_CS_PIN        5 // pino cs da memoria
