@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <Wire.h>
 #include <Adafruit_INA219.h>
 #include "sensors_definition.h"
 
@@ -39,7 +38,7 @@ void setup() {
 void start() {
 
   // Start INA219: se a operação de inicializar o ina219 não funcionar entrará em um loop e dará um erro 
-  if (!ina219.begin_I2C()) {
+  if (!ina219.begin()) {
 
      printf("Failed to find INA219 chip");
       while (1) { delay(10);};
