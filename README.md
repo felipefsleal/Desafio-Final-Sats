@@ -29,5 +29,5 @@ Os arquivos estão organizados por funcionalidade e tipo de sensor:
 
 - **Otávio Braga** ( otaviob.moraes.20241@poli.ufrj.br )
 - **Felipe Leal** ( felipe.leal.20241@poli.ufrj.br )
-- **Lucas Pacheco** ( lucassmpacheco@poli.ufrj.br )
+- **Lucas Pacheco** ( lucasmpacheco.20241@poli.ufrj.br )
 - **Julia Acsa** ( juliamila.20242@poli.ufrj.br )
