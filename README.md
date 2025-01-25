@@ -15,6 +15,7 @@ Os arquivos estão organizados por funcionalidade e tipo de sensor:
 - **`RTC.c`**: Implementação do módulo de tempo real (RTC) para sincronização temporal dos dados.
 - **`UMI.c`**: Código para o sensor de unidade de medida inercial, coletando os seguintes dados: Aceleração, velocidade angular, campo magnético.
 - **`sensors_definition.h`**: Arquivo de cabeçalho contendo definições globais, como pinos e configurações dos sensores.
+- **`espectrofotometro.ino`**: Código para espectrofotômetro, desenvolvido pela equipe de payload para medir a absorção de luz.
 
 ## Tecnologias Utilizadas
 
