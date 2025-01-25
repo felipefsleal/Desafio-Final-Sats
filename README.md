@@ -19,7 +19,7 @@ Os arquivos estão organizados por funcionalidade e tipo de sensor:
 
 ## Tecnologias Utilizadas
 
-- Linguagem de programação: **C**
+- Linguagem de programação: **C**, **C++**
 - Protocolo de comunicação: **I2C**, **SPI**, **UART**
 - Microcontrolador que será embarcado: **ESP 32**
 
