@@ -1,37 +1,44 @@
 #include <stdint.h>
-#include <stdio.h>
-#include <SPI.h> //biblioteca para comunicacao SPI
-#include <Adafruit_BNO08x.h> //biblioteca do UMI escolhido
-#include "sensors_definition.h"
+#include <SPI.h>
+#include <Adafruit_BNO08x.h> // biblioteca sensor BNO08x
+
 
 typedef struct {
-    float orientation[3]; // orientação em graus (pitch, roll, yaw)
-    float acceleration[3]; // aceleração em m/s^2 (x, y, z)
+    float orientation[3]; // orientacao em graus
+    float acceleration[3]; // aceleracao m/s2
 } Measurement;
 
-// objeto para o UMI BNO055
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &SPI, 10); // 10 é o CS pin
+// objeto sensor BNO08x
+Adafruit_BNO08x bno;
 
-// buffer armazenamento SPIFLASH
+// buffer para a memoria SPI flash
 uint8_t flash_buffer[FLASH_PAGE_SIZE];
 uint16_t flash_buffer_index = 0;
-uint32_t flash_write_address = UMI_INITIAL_ADDRESS; // endereco inicial na memória Flash
+uint32_t flash_write_address = UMI_INITIAL_ADDRESS;
 
-// funcao para inicializar os componentes
+// funcao para inicializar componentes
 void system_init() {
-    // Inicializa o BNO055
-    if (!bno.begin()) {
-        // erro ao inicializar o BNO055, entgra em loop infinito
+    // inicializa o BNO08x utilizando SPI
+    if (!bno.begin_SPI(FLASH_CS_PIN, IMU_INT_PIN)) {
+        Serial.println("Erro ao inicializar o BNO08x via SPI.");
         while (1);
     }
 
-    // inicializa a comunicacao SPI
+    // configura BNO08x
+    if (!bno.enableReport(SH2_GAME_ROTATION_VECTOR)) {
+        Serial.println("Erro ao habilitar relatório de orientação!");
+    }
+    if (!bno.enableReport(SH2_ACCELEROMETER)) {
+        Serial.println("Erro ao habilitar relatório de aceleração!");
+    }
+
+    // inicializa SPI memoria Flash
     SPI.begin();
     pinMode(FLASH_CS_PIN, OUTPUT);
-    digitalWrite(FLASH_CS_PIN, HIGH); // desativa o chip de memoria SPI Flash
+    digitalWrite(FLASH_CS_PIN, HIGH); 
 }
 
-// funcao para armazenar dados na SPI Flash
+// funcao armazenar dados na SPI Flash
 void store_data_in_flash(float orientation[3], float acceleration[3]) {
     Measurement data;
     for (int i = 0; i < 3; i++) {
@@ -39,28 +46,34 @@ void store_data_in_flash(float orientation[3], float acceleration[3]) {
         data.acceleration[i] = acceleration[i];
     }
 
-    // copia dados para o buffer
+    // verifica buffer espaco suficiente
+    if ((flash_buffer_index + sizeof(Measurement)) > FLASH_PAGE_SIZE) {
+        Serial.println("Erro: Buffer cheio antes de gravar na SPI Flash!");
+        return;
+    }
+
+    // copia dados para buffer
     memcpy(&flash_buffer[flash_buffer_index], &data, sizeof(Measurement));
     flash_buffer_index += sizeof(Measurement);
 
-    // se o buffer estiver cheio, escreve na memoria Flash via SPI
+    // verifica buffer cheio e grava memoria
     if (flash_buffer_index >= FLASH_PAGE_SIZE) {
-        digitalWrite(FLASH_CS_PIN, LOW); // Seleciona o chip da memória Flash
+        digitalWrite(FLASH_CS_PIN, LOW); // seleciona o chip da memoria flash
 
-        // escreve endereço na memoria Flash
-        SPI.transfer(0x02); // comando de gravação (WRITE)
-        SPI.transfer((flash_write_address >> 16) & 0xFF); // Endereço MSB
-        SPI.transfer((flash_write_address >> 8) & 0xFF);  // Endereço médio
-        SPI.transfer(flash_write_address & 0xFF);         // Endereço LSB
+        // envia o comando de gravacao
+        SPI.transfer(0x02); 
+        SPI.transfer((flash_write_address >> 16) & 0xFF); // endereco MSB
+        SPI.transfer((flash_write_address >> 8) & 0xFF);  // endereco medio
+        SPI.transfer(flash_write_address & 0xFF);         // endereco LSB
 
-        // transfere dados buffer para memoria Flash
+        // transfere dados buffer para memoria
         for (uint16_t i = 0; i < FLASH_PAGE_SIZE; i++) {
             SPI.transfer(flash_buffer[i]);
         }
 
-        digitalWrite(FLASH_CS_PIN, HIGH); 
+        digitalWrite(FLASH_CS_PIN, HIGH); // desativa chip da memoria flash
 
-        // atualiza o endereco de gravacao, reinicia o indice do buffer
+        // atualiza endereco de gravacao, reinicia indice buffer
         flash_write_address += FLASH_PAGE_SIZE;
         flash_buffer_index = 0;
     }
@@ -68,28 +81,38 @@ void store_data_in_flash(float orientation[3], float acceleration[3]) {
 
 void setup() {
     Serial.begin(115200);            // inicializa a comunicacao serial
-    system_init();                   // inicializa os sensores e a memoria Flash
+    system_init();                   // inicializa os sensores e a memoria
 }
 
 void loop() {
     float orientation[3] = {0.0, 0.0, 0.0};
     float acceleration[3] = {0.0, 0.0, 0.0};
 
-    // dados do BNO055
-    sensors_event_t event;
-    bno.getEvent(&event);
+    // obtem dados do sensor
+    sh2_SensorValue_t sensorValue;
 
-    orientation[0] = event.orientation.x;
-    orientation[1] = event.orientation.y;
-    orientation[2] = event.orientation.z;
+    while (bno.getSensorEvent(&sensorValue)) { 
+        switch (sensorValue.sensorId) {
+            case SH2_GAME_ROTATION_VECTOR: // dados orientacao
+                orientation[0] = sensorValue.un.gameRotationVector.i * 360.0; 
+                orientation[1] = sensorValue.un.gameRotationVector.j * 360.0; 
+                orientation[2] = sensorValue.un.gameRotationVector.k * 360.0; 
+                break;
 
-    acceleration[0] = event.acceleration.x;
-    acceleration[1] = event.acceleration.y;
-    acceleration[2] = event.acceleration.z;
+            case SH2_ACCELEROMETER: // dados de aceleracao
+                acceleration[0] = sensorValue.un.accelerometer.x; // aceleracao X
+                acceleration[1] = sensorValue.un.accelerometer.y; // aceleracao Y
+                acceleration[2] = sensorValue.un.accelerometer.z; // aceleracao Z
+                break;
 
-    // armazena dados memoria SPI Flash
+            default:
+                break;
+        }
+    }
+
+    // armazena dados na memoria
     store_data_in_flash(orientation, acceleration);
 
-    // aguarda 1 segundo antes da proxima leitura
+    // delay de 1 seg
     delay(1000);
 }
